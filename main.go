@@ -1,14 +1,14 @@
 package main
 
 import (
+	"log"
 	"net/http"
 )
 
 func main() {
-	http.HandleFunc("/", indexHandler)
-}
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/", fs)
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Success"))
+	log.Println("Listening...")
+	http.ListenAndServe(":8080", nil)
 }
