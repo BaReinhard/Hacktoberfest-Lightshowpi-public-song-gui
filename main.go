@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"net/http"
+
+	"google.golang.org/appengine"
 )
 
 func main() {
@@ -11,4 +13,5 @@ func main() {
 
 	log.Println("Listening...")
 	http.ListenAndServe(":8080", nil)
+	appengine.Main()
 }
