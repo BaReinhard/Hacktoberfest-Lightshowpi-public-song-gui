@@ -1,6 +1,10 @@
 language: go
-
 go:
-  - "1.x"
-  - "1.8"
-  - "1.10.x"
+  - 1.10.x
+# script used in the automatically added test stage
+script:
+  - printenv
+notifications:
+  webhooks:
+    urls:
+      - https://github-integrations-dot-uplifted-elixir-203119.appspot.com/travis
