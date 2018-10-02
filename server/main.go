@@ -53,12 +53,7 @@ func getStateHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return nil
 	})
-	if err != nil && err == datastore.ErrNoSuchEntity {
-		log.Errorf(ctx, "Transaction Error: %v", err)
-		w.WriteHeader(http.StatusNoContent)
-		json.NewEncoder(w).Encode(errorPayload{Error: err.Error(), StatusCode: http.StatusNoContent})
-		return
-	} else if err != nil && err == datastore.ErrConcurrentTransaction {
+	if err != nil && err == datastore.ErrConcurrentTransaction {
 		log.Errorf(ctx, "Transaction Error: %v", err)
 		w.WriteHeader(http.StatusTooManyRequests)
 		json.NewEncoder(w).Encode(errorPayload{Error: err.Error(), StatusCode: http.StatusTooManyRequests})
