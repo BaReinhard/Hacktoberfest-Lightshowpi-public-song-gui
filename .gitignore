@@ -1,1 +1,4 @@
 app.yaml
+**/node_modules
+key.json
+main.retry

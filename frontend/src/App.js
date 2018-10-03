@@ -2,12 +2,7 @@ import React, { Component } from "react";
 import logo from "./logo.svg";
 import axios from "axios";
 import "./App.css";
-function isEmpty(obj) {
-  for (var key in obj) {
-    if (obj.hasOwnProperty(key)) return false;
-  }
-  return true;
-}
+
 class App extends Component {
   constructor() {
     super();
@@ -17,29 +12,62 @@ class App extends Component {
       }
     };
   }
-  async componentDidMount() {
+  getState = async () => {
     let newState = {};
-    if (process.env.NODE_ENV === "PROD") {
-      newState = await axios.get("/api/getState").then(res => {
-        if (res.data) {
-          return res.data;
-        }
-      });
-    } else {
-      newState = await new Promise((resolve, reject) => {
-        resolve({
-          songs: [
-            { name: "First Song", artist: "First Artist" },
-            { name: "Second Song", artist: "Second Artist" },
-            { name: "Third Song", artist: "Third Artist" }
-          ],
-          running: true,
-          currentSongIndex: 0,
-          currentSong: { name: "First Song", artist: "First Artist" }
+    // if (process.env.NODE_ENV === "PROD") {
+    try {
+      newState = await axios
+        .get("/api/getState")
+        .then(res => {
+          console.log(res);
+          if (res.status === 200) {
+            return res.data;
+          } else if (res.status === 429) {
+            return { running: false, error: true, status: "reload" };
+          } else if (res.status === 500) {
+            return { running: false, error: true, status: "fatal" };
+          } else {
+            return { running: false, error: true, status: "fatal" };
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          return {
+            running: false,
+            error: true
+          };
         });
-      });
+    } catch (e) {
+      console.error(e);
+      newState = {
+        running: false,
+        error: true
+      };
     }
+    // } else {
+    // newState = await new Promise((resolve, reject) => {
+    //   resolve({
+    //     songs: [
+    //       { name: "First Song", artist: "First Artist" },
+    //       { name: "Second Song", artist: "Second Artist" },
+    //       { name: "Third Song", artist: "Third Artist" }
+    //     ],
+    //     running: true,
+    //     currentSongIndex: 0,
+    //     currentSong: { name: "First Song", artist: "First Artist" }
+    //   });
+    // });
+    // }
+
     this.setState({ psgState: newState });
+  };
+  async componentDidMount() {
+    let getState = this.getState;
+    let interval = setInterval(() => {
+      getState();
+    }, 5000);
+    this.getState();
+    this.setState({ interval });
   }
   render() {
     let AppHead = () => (
@@ -48,8 +76,16 @@ class App extends Component {
         <h1 className="App-title">Welcome to Lightshow Pi</h1>
       </header>
     );
-
-    if (!this.state.psgState.running) {
+    if (this.state.psgState.error) {
+      return (
+        <div className="App">
+          <AppHead />
+          <p className="App-intro">An error occurred retrieving your state</p>
+          {this.state.psgState.status &&
+            this.state.psgState.status === "reload" && <p>Please Reload</p>}
+        </div>
+      );
+    } else if (!this.state.psgState.running) {
       return (
         <div className="App">
           <AppHead />
@@ -64,12 +100,12 @@ class App extends Component {
             <h1>Current Song</h1>
             <div>
               <div>
-                <h3>Artist</h3>
-                {this.state.psgState.currentSong.artist}
-              </div>
-              <div>
                 <h3>Song</h3>
                 {this.state.psgState.currentSong.name}
+              </div>
+              <div>
+                <h3>Artist</h3>
+                {this.state.psgState.currentSong.artist}
               </div>
             </div>
           </div>
@@ -78,12 +114,12 @@ class App extends Component {
             {this.state.psgState.songs.map(song => (
               <div>
                 <div>
-                  <h3>Artist</h3>
-                  {song.artist}
-                </div>
-                <div>
                   <h3>Song</h3>
                   {song.name}
+                </div>
+                <div>
+                  <h3>Artist</h3>
+                  {song.artist}
                 </div>
               </div>
             ))}

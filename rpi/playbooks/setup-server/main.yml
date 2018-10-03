@@ -1,0 +1,49 @@
+- hosts: rpi
+  vars:
+    DEPS: [git]
+  tasks:
+    - name: Update and upgrade apt packages
+      become: true
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400
+    - name: Ensure all needed dependencies are updated
+      apt:
+        name: "{{ item }}"
+        state: latest
+      with_items: "{{DEPS}}"
+      become: yes
+    - name: Check existing lightshow repo
+      stat:
+        path: /home/pi/lightshowpi
+      register: lightshow_folder
+    - name: Cloning Lightshowpi Repo
+      git:
+        repo: https://togiles@bitbucket.org/togiles/lightshowpi.git
+        dest: /home/pi/lightshowpi
+        version: stable
+        accept_hostkey: yes
+      become: yes
+      when: lightshow_folder.stat.exists == False
+    - name: Install Lightshow Pi
+      shell: /home/pi/lightshowpi/install.sh
+    - name: Check Existing Web View exists
+      stat:
+        path: /home/pi/web_view
+      register: web_view_folder
+    - name: Cloning Web View Folder
+      git:
+        repo: https://github.com/BaReinhard/Hacktoberfest-Lightshowpi-public-song-gui.git
+        dest: /home/pi/web_view
+        version: master
+        accept_hostkey: yes
+      become: yes
+      when: web_view_folder.stat.exists == False
+    - name: Templating GCP Credentials
+      template:
+        src: /templates/key.json.j2
+        dest: /home/pi/web_view/rpi-server/key.json
+        owner: pi
+        group: pi
+        mode: 0755
