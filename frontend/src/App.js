@@ -12,7 +12,7 @@ class App extends Component {
       }
     };
   }
-  async componentDidMount() {
+  getState = async () => {
     let newState = {};
     // if (process.env.NODE_ENV === "PROD") {
     try {
@@ -58,7 +58,16 @@ class App extends Component {
     //   });
     // });
     // }
+
     this.setState({ psgState: newState });
+  };
+  async componentDidMount() {
+    let getState = this.getState;
+    let interval = setInterval(() => {
+      getState();
+    }, 5000);
+    this.getState();
+    this.setState({ interval });
   }
   render() {
     let AppHead = () => (
@@ -91,12 +100,12 @@ class App extends Component {
             <h1>Current Song</h1>
             <div>
               <div>
-                <h3>Artist</h3>
-                {this.state.psgState.currentSong.artist}
-              </div>
-              <div>
                 <h3>Song</h3>
                 {this.state.psgState.currentSong.name}
+              </div>
+              <div>
+                <h3>Artist</h3>
+                {this.state.psgState.currentSong.artist}
               </div>
             </div>
           </div>
@@ -105,12 +114,12 @@ class App extends Component {
             {this.state.psgState.songs.map(song => (
               <div>
                 <div>
-                  <h3>Artist</h3>
-                  {song.artist}
-                </div>
-                <div>
                   <h3>Song</h3>
                   {song.name}
+                </div>
+                <div>
+                  <h3>Artist</h3>
+                  {song.artist}
                 </div>
               </div>
             ))}
