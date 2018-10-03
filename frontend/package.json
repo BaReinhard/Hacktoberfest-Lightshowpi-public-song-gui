@@ -11,7 +11,7 @@
   "scripts": {
     "start-dev": "export PSG_ENV=DEV && react-scripts start",
     "start": "export PSG_ENV=PROD && react-scripts start",
-    "build": "react-scripts build && rm -R ../static/* && cp -R build/* ../static/",
+    "build": "react-scripts build && rm -Rf ../static/* && cp -R build/* ../static/",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   }
