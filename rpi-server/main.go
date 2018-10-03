@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/datastore"
@@ -33,10 +34,20 @@ func init() {
 	}
 }
 func readState() lightShowStatePayload {
+	fileContent, err := ioutil.ReadFile("./playlist")
+	if err != nil {
+		fmt.Printf("Error Reading Playlist File: %v", err)
+		os.Exit(1)
+	}
 	pload := lightShowStatePayload{}
+	songNames := []song{}
+	rows := strings.Split(string(fileContent), "\n")
+	for _, row := range rows {
+		songNames = append(songNames, song{Name: strings.Split(row, "\t")[0], Artist: "Unknown"})
+	}
+	pload.Songs = songNames
 	pload.Running = true
-	pload.CurrentSong = song{Name: "Holla", Artist: "Back"}
-	pload.Songs = []song{pload.CurrentSong}
+	pload.CurrentSong = songNames[0]
 	return pload
 }
 func exitNow() {
