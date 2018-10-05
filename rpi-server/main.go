@@ -51,7 +51,9 @@ func readState() lightShowStatePayload {
 	songNames := []song{}
 	rows := strings.Split(fileContent, "\n")
 	for _, row := range rows {
-		songNames = append(songNames, song{Name: strings.Split(row, "\t")[0], Artist: "Unavailable"})
+		if row != "" {
+			songNames = append(songNames, song{Name: strings.Split(row, " ___ ")[1], Artist: strings.Split(row, " ___ ")[0]})
+		}
 	}
 	pload.Songs = songNames
 	pload.Running = playlistRunning
@@ -83,7 +85,7 @@ func getCurrentSong() (string, error) {
 
 }
 func getPlaylist() (string, error) {
-	return readFromFile("./playlist")
+	return readFromFile("/tmp/playlistsongs")
 
 }
 func readFromFile(path string) (string, error) {
