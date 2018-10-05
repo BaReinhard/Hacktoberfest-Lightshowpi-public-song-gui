@@ -43,6 +43,10 @@ func readState() lightShowStatePayload {
 	if err != nil {
 		fmt.Printf("%v", err)
 	}
+	playlistRunning, err := getPlaylistStatus()
+	if err != nil {
+		fmt.Printf("%v", err)
+	}
 	pload := lightShowStatePayload{}
 	songNames := []song{}
 	rows := strings.Split(fileContent, "\n")
@@ -50,9 +54,29 @@ func readState() lightShowStatePayload {
 		songNames = append(songNames, song{Name: strings.Split(row, "\t")[0], Artist: "Unavailable"})
 	}
 	pload.Songs = songNames
-	pload.Running = true
-	pload.CurrentSong = song{Name: strings.Replace(currentSong, "Now Playing ", "", -1)}
+	pload.Running = playlistRunning
+	songName, artist := getCurrentSongInfo(currentSong)
+	pload.CurrentSong = song{Name: songName, Artist: artist}
 	return pload
+}
+func getCurrentSongInfo(songinfo string) (string, string) {
+	infoArray := strings.Split(songinfo, " by ")
+	if len(infoArray) == 2 {
+		return strings.Replace(infoArray[0], "Now Playing ", "", -1), infoArray[1]
+	} else if len(infoArray) == 1 {
+		return strings.Replace(infoArray[0], "Now Playing ", "", -1), ""
+	}
+	return "", ""
+}
+func getPlaylistStatus() (bool, error) {
+	statusString, err := readFromFile("/tmp/show-running")
+	if err != nil {
+		return false, fmt.Errorf("Error Running Playlist Status: %v", err)
+	}
+	if statusString == "false" {
+		return false, nil
+	}
+	return true, nil
 }
 func getCurrentSong() (string, error) {
 	return readFromFile("/tmp/current_song")
