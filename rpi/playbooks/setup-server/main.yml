@@ -42,7 +42,7 @@
       when: web_view_folder.stat.exists == False
     - name: Templating GCP Credentials
       template:
-        src: /templates/key.json.j2
+        src: templates/key.json.j2
         dest: /home/pi/web_view/rpi-server/key.json
         owner: pi
         group: pi

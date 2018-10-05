@@ -25,6 +25,7 @@ func init() {
 	project, err := getProjectInfo()
 	if err != nil {
 		fmt.Printf("Error Reading Credential File")
+		exitNow()
 		panic(1)
 	}
 	// Init Datastore Client
@@ -34,21 +35,40 @@ func init() {
 	}
 }
 func readState() lightShowStatePayload {
-	fileContent, err := ioutil.ReadFile("./playlist")
+	fileContent, err := getPlaylist()
 	if err != nil {
-		fmt.Printf("Error Reading Playlist File: %v", err)
-		os.Exit(1)
+		fmt.Printf("%v", err)
+	}
+	currentSong, err := getCurrentSong()
+	if err != nil {
+		fmt.Printf("%v", err)
 	}
 	pload := lightShowStatePayload{}
 	songNames := []song{}
-	rows := strings.Split(string(fileContent), "\n")
+	rows := strings.Split(fileContent, "\n")
 	for _, row := range rows {
-		songNames = append(songNames, song{Name: strings.Split(row, "\t")[0], Artist: "Unknown"})
+		songNames = append(songNames, song{Name: strings.Split(row, "\t")[0], Artist: "Unavailable"})
 	}
 	pload.Songs = songNames
 	pload.Running = true
-	pload.CurrentSong = songNames[0]
+	pload.CurrentSong = song{Name: strings.Replace(currentSong, "Now Playing ", "", -1)}
 	return pload
+}
+func getCurrentSong() (string, error) {
+	return readFromFile("/tmp/current_song")
+
+}
+func getPlaylist() (string, error) {
+	return readFromFile("./playlist")
+
+}
+func readFromFile(path string) (string, error) {
+	fileContent, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("Error Reading Playlist File: %v", err)
+
+	}
+	return string(fileContent), nil
 }
 func exitNow() {
 	shouldExit <- true
