@@ -1,4 +1,8 @@
 def main(args):
-    file = open('/tmp/show-running', 'w')
-    file.write('true')
-    file.close()
+    with open('/tmp/show-running', 'w') as f:
+        f.write('true')
+    f.close()
+
+
+if __name__ == "__main__":
+    main("arg")
