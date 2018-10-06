@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
+	"github.com/dhowden/tag"
 	"google.golang.org/appengine/log"
 )
 
@@ -34,6 +35,19 @@ func init() {
 		fmt.Printf("Error Getting Client: %v", err)
 	}
 }
+func getSongInfo(path string) (string, string, error) {
+	f, err := os.Open(os.ExpandEnv(path))
+	if err != nil {
+		return "", "", fmt.Errorf("Error Opening Path: %v", err)
+	}
+	defer f.Close()
+
+	m, err := tag.ReadFrom(f)
+	if err != nil {
+		return "", "", fmt.Errorf("Error Reading from File: %v", err)
+	}
+	return m.Title(), m.Artist(), nil
+}
 func readState() lightShowStatePayload {
 	fileContent, err := getPlaylist()
 	if err != nil {
@@ -52,7 +66,11 @@ func readState() lightShowStatePayload {
 	rows := strings.Split(fileContent, "\n")
 	for _, row := range rows {
 		if row != "" {
-			songNames = append(songNames, song{Name: strings.Split(row, " ___ ")[1], Artist: strings.Split(row, " ___ ")[0]})
+			title, artist, err := getSongInfo(strings.Split(row, "\t")[1])
+			if err != nil {
+				fmt.Printf("%v", err)
+			}
+			songNames = append(songNames, song{Name: title, Artist: artist})
 		}
 	}
 	pload.Songs = songNames
@@ -85,7 +103,7 @@ func getCurrentSong() (string, error) {
 
 }
 func getPlaylist() (string, error) {
-	return readFromFile("/tmp/playlistsongs")
+	return readFromFile(os.ExpandEnv("$SYNCHRONIZED_LIGHTS_HOME/music/sample/.playlist"))
 
 }
 func readFromFile(path string) (string, error) {
@@ -146,6 +164,7 @@ func readStateInterval() {
 
 }
 func main() {
+
 	go readStateInterval()
 	for exitGo := range shouldExit {
 		if exitGo {
