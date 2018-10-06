@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
+	"github.com/dhowden/tag"
 	"google.golang.org/appengine/log"
 )
 
@@ -25,6 +26,7 @@ func init() {
 	project, err := getProjectInfo()
 	if err != nil {
 		fmt.Printf("Error Reading Credential File")
+		exitNow()
 		panic(1)
 	}
 	// Init Datastore Client
@@ -33,22 +35,84 @@ func init() {
 		fmt.Printf("Error Getting Client: %v", err)
 	}
 }
-func readState() lightShowStatePayload {
-	fileContent, err := ioutil.ReadFile("./playlist")
+func getSongInfo(path string) (string, string, error) {
+	f, err := os.Open(os.ExpandEnv(path))
 	if err != nil {
-		fmt.Printf("Error Reading Playlist File: %v", err)
-		os.Exit(1)
+		return "", "", fmt.Errorf("Error Opening Path: %v", err)
+	}
+	defer f.Close()
+
+	m, err := tag.ReadFrom(f)
+	if err != nil {
+		return "", "", fmt.Errorf("Error Reading from File: %v", err)
+	}
+	return m.Title(), m.Artist(), nil
+}
+func readState() lightShowStatePayload {
+	fileContent, err := getPlaylist()
+	if err != nil {
+		fmt.Printf("%v", err)
+	}
+	currentSong, err := getCurrentSong()
+	if err != nil {
+		fmt.Printf("%v", err)
+	}
+	playlistRunning, err := getPlaylistStatus()
+	if err != nil {
+		fmt.Printf("%v", err)
 	}
 	pload := lightShowStatePayload{}
 	songNames := []song{}
-	rows := strings.Split(string(fileContent), "\n")
+	rows := strings.Split(fileContent, "\n")
 	for _, row := range rows {
-		songNames = append(songNames, song{Name: strings.Split(row, "\t")[0], Artist: "Unknown"})
+		if row != "" {
+			title, artist, err := getSongInfo(strings.Split(row, "\t")[1])
+			if err != nil {
+				fmt.Printf("%v", err)
+			}
+			songNames = append(songNames, song{Name: title, Artist: artist})
+		}
 	}
 	pload.Songs = songNames
-	pload.Running = true
-	pload.CurrentSong = songNames[0]
+	pload.Running = playlistRunning
+	songName, artist := getCurrentSongInfo(currentSong)
+	pload.CurrentSong = song{Name: songName, Artist: artist}
 	return pload
+}
+func getCurrentSongInfo(songinfo string) (string, string) {
+	infoArray := strings.Split(songinfo, " by ")
+	if len(infoArray) == 2 {
+		return strings.Replace(infoArray[0], "Now Playing ", "", -1), infoArray[1]
+	} else if len(infoArray) == 1 {
+		return strings.Replace(infoArray[0], "Now Playing ", "", -1), ""
+	}
+	return "", ""
+}
+func getPlaylistStatus() (bool, error) {
+	statusString, err := readFromFile("/tmp/show-running")
+	if err != nil {
+		return false, fmt.Errorf("Error Running Playlist Status: %v", err)
+	}
+	if statusString == "false" {
+		return false, nil
+	}
+	return true, nil
+}
+func getCurrentSong() (string, error) {
+	return readFromFile("/tmp/current_song")
+
+}
+func getPlaylist() (string, error) {
+	return readFromFile(os.ExpandEnv("$SYNCHRONIZED_LIGHTS_HOME/music/sample/.playlist"))
+
+}
+func readFromFile(path string) (string, error) {
+	fileContent, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("Error Reading Playlist File: %v", err)
+
+	}
+	return string(fileContent), nil
 }
 func exitNow() {
 	shouldExit <- true
@@ -100,6 +164,7 @@ func readStateInterval() {
 
 }
 func main() {
+
 	go readStateInterval()
 	for exitGo := range shouldExit {
 		if exitGo {
