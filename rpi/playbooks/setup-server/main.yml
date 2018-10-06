@@ -1,7 +1,20 @@
 - hosts: rpi
   vars:
-    DEPS: [git]
+    DEPS: [git, golang, google-cloud-sdk]
+    GO_DEPS:
+      [
+        "cloud.google.com/go/datastore",
+        "github.com/gorilla/mux",
+        "google.golang.org/appengine",
+        "google.golang.org/appengine/log",
+	      "github.com/dhowden/tag",
+      ]
+    deploy_path: /home/pi/web_view/rpi-server/key.json
   tasks:
+    - name: Download GPG Key Gcloud SDK
+      shell: echo "deb http://packages.cloud.google.com/apt cloud-sdk-stretch main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+    - name: Import Public Key
+      shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
     - name: Update and upgrade apt packages
       become: true
       apt:
@@ -14,6 +27,31 @@
         state: latest
       with_items: "{{DEPS}}"
       become: yes
+    - name: Create Go Directory
+      file:
+        path: /home/pi/go
+        state: directory
+        owner: pi
+        group: staff
+      become: yes
+    - name: Set GOPATH
+      lineinfile:
+        path: /home/pi/.bashrc
+        line: 'export GOPATH=/home/pi/go'
+    - name: Set GOOGLE_APPLICATION_CREDENTIALS
+      lineinfile:
+        path: /home/pi/.bashrc
+        line: 'export GOOGLE_APPLICATION_CREDENTIALS=/home/pi/web_view/rpi-server/key.json'
+    - name: Set DEPLOY_PATH
+      lineinfile:
+        path: /home/pi/.bashrc
+        line: 'export DEPLOY_PATH={ deploy_path }'
+    - name: Ensure all golang dependencies are updated
+      shell: "go get -u {{ item }}"
+      with_items: "{{GO_DEPS}}"
+      become: yes
+      environment:
+        GOPATH: /home/pi/go
     - name: Check existing lightshow repo
       stat:
         path: /home/pi/lightshowpi
@@ -28,6 +66,7 @@
       when: lightshow_folder.stat.exists == False
     - name: Install Lightshow Pi
       shell: /home/pi/lightshowpi/install.sh
+      when: lightshow_folder.stat.exists == False
     - name: Check Existing Web View exists
       stat:
         path: /home/pi/web_view
@@ -45,6 +84,48 @@
         src: templates/key.json.j2
         dest: /home/pi/web_view/rpi-server/key.json
         owner: pi
-        group: pi
+        group: staff
         mode: 0755
       become: yes
+    - name: Set Project ID
+      shell: /home/pi/web_view/bin/getproject
+      register: PROJECT_ID
+    - name: Set Email
+      shell: /home/pi/web_view/bin/getemail
+      register: CLIENT_EMAIL
+    - name: Templating Set Song File
+      template:
+        src: templates/set-song.sh.j2
+        dest: /usr/local/bin/set-song.sh
+        owner: pi
+        group: staff
+        mode: a+x
+      become: yes
+    - name: Templating Start Show File
+      template:
+        src: templates/start_show.py
+        dest: /usr/local/bin/start_show.sh
+        owner: pi
+        group: staff
+        mode: a+x
+      become: yes
+    - name: Templating Stop Show File
+      template:
+        src: templates/stop_show.py
+        dest: /usr/local/bin/stop_show.py
+        owner: pi
+        group: staff
+        mode: a+x
+      become: yes
+    - name: Templating Default Configuration File
+      template:
+        src: templates/defaults.cfg.j2
+        dest: /home/pi/lightshowpi/config/defaults.cfg
+        owner: pi
+        group: staff
+        mode: 0755
+      become: yes  
+    - name: Deploy Appengine Contents
+      shell: gcloud auth activate-service-account { CLIENT_EMAIL } --key-file={ GOOGLE_APPLICATION_CREDENTIALS } --project={ PROJECT_ID } && gcloud app deploy { deploy_path } --project={ PROJECT_ID }
+      environment:
+        GOOGLE_APPLICATION_CREDENTIALS: /home/pi/web_view/rpi-server/key.json
