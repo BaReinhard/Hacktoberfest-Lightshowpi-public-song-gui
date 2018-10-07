@@ -1,6 +1,6 @@
 - hosts: rpi
   vars:
-    DEPS: [git, golang, google-cloud-sdk]
+    DEPS: [git]
     GO_DEPS:
       [
         "cloud.google.com/go/datastore",
@@ -9,12 +9,46 @@
         "google.golang.org/appengine/log",
 	      "github.com/dhowden/tag",
       ]
-    deploy_path: /home/pi/web_view/rpi-server/key.json
+    deploy_path: /home/pi/web_view/server/app.yaml
+    GOOGLE_APPLICATION_CREDENTIALS: /home/pi/web_view/rpi-server/key.json
   tasks:
-    - name: Download GPG Key Gcloud SDK
-      shell: echo "deb http://packages.cloud.google.com/apt cloud-sdk-stretch main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-    - name: Import Public Key
-      shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+    - name: Ensure /usr/local/go exists
+      file:
+        path: /usr/local/go
+        state: directory
+        owner: root
+        group: staff
+      become: yes
+    - name: Download Golang
+      get_url:
+        url: https://dl.google.com/go/go1.8.linux-armv6l.tar.gz
+        dest: /home/pi/go1.8.linux-armv6l.tar.gz
+        mode: 0755
+    - name: Install Golang
+      unarchive:
+        remote_src: yes
+        src: /home/pi/go1.8.linux-armv6l.tar.gz
+        dest: /usr/local/
+      become: yes
+    - name: Set Go Path
+      lineinfile:
+        path: /home/pi/.bashrc
+        line: export PATH=$PATH:/usr/local/go/bin
+    # Possibly reuse for localhost playbook on deployment
+    # - name: Download SDK
+    #   get_url:
+    #     url: https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-219.0.1-linux-x86.tar.gz
+    #     dest: /home/pi/google-cloud-sdk-219.0.1-linux-x86.tar.gz
+    #     mode: 0755
+    # - name: Unzip SDK
+    #   unarchive:
+    #     remote_src: yes
+    #     src: /home/pi/google-cloud-sdk-219.0.1-linux-x86.tar.gz
+    #     dest: /home/pi/
+    # - name: Install SDK
+    #   shell: /home/pi/google-cloud-sdk/install.sh
+    - name: Init SDK
+      shell: /home/pi/google-cloud-sdk/bin/gcloud init
     - name: Update and upgrade apt packages
       become: true
       apt:
@@ -42,12 +76,13 @@
       lineinfile:
         path: /home/pi/.bashrc
         line: 'export GOOGLE_APPLICATION_CREDENTIALS=/home/pi/web_view/rpi-server/key.json'
-    - name: Set DEPLOY_PATH
-      lineinfile:
-        path: /home/pi/.bashrc
-        line: 'export DEPLOY_PATH={ deploy_path }'
+    # Possibly reuse for localhost playbook on deployment
+    # - name: Set DEPLOY_PATH
+    #   lineinfile:
+    #     path: /home/pi/.bashrc
+    #     line: "export DEPLOY_PATH={{ deploy_path }}"
     - name: Ensure all golang dependencies are updated
-      shell: "go get -u {{ item }}"
+      shell: "/usr/local/go/bin/go get -u {{ item }}"
       with_items: "{{GO_DEPS}}"
       become: yes
       environment:
@@ -87,12 +122,35 @@
         group: staff
         mode: 0755
       become: yes
-    - name: Set Project ID
-      shell: /home/pi/web_view/bin/getproject
-      register: PROJECT_ID
-    - name: Set Email
-      shell: /home/pi/web_view/bin/getemail
-      register: CLIENT_EMAIL
+    # Possibly reuse for localhost playbook on deployment
+    # - name: Templating GCP Credentials
+    #   template:
+    #     src: templates/key.json.j2
+    #     dest: /home/pi/web_view/server/key.json
+    #     owner: pi
+    #     group: staff
+    #     mode: 0755
+    #   become: yes
+    # Possibly reuse for localhost playbook on deployment
+    # - name: Set Project ID
+    #   shell: /usr/local/go/bin/go run /home/pi/web_view/bin/project/getProject.go
+    #   register: PROJECT_ID
+    #   environment:
+    #     GOOGLE_APPLICATION_CREDENTIALS: /home/pi/web_view/rpi-server/key.json
+    # - name: Set Email
+    #   shell: /usr/local/go/bin/go run /home/pi/web_view/bin/email/getEmail.go
+    #   register: CLIENT_EMAIL
+    #   environment:
+    #     GOOGLE_APPLICATION_CREDENTIALS: /home/pi/web_view/rpi-server/key.json
+    # Possibly reuse for localhost playbook on deployment
+    # - name: Templating app.yaml
+    #   template:
+    #     src: templates/app.yaml.j2
+    #     dest: /home/pi/web_view/server/app.yaml
+    #     owner: pi
+    #     group: staff
+    #     mode: 0755
+    #   become: yes
     - name: Templating Set Song File
       template:
         src: templates/set-song.sh.j2
@@ -125,7 +183,8 @@
         group: staff
         mode: 0755
       become: yes  
-    - name: Deploy Appengine Contents
-      shell: gcloud auth activate-service-account { CLIENT_EMAIL } --key-file={ GOOGLE_APPLICATION_CREDENTIALS } --project={ PROJECT_ID } && gcloud app deploy { deploy_path } --project={ PROJECT_ID }
-      environment:
-        GOOGLE_APPLICATION_CREDENTIALS: /home/pi/web_view/rpi-server/key.json
+    # Possibly reuse for localhost playbook on deployment    
+    # - name: Deploy Appengine Contents
+    #   shell: "/home/pi/google-cloud-sdk/bin/gcloud config set project {{ PROJECT_ID.stdout }} && /home/pi/google-cloud-sdk/bin/gcloud auth activate-service-account {{ CLIENT_EMAIL.stdout }} --key-file={{ GOOGLE_APPLICATION_CREDENTIALS }} --project={{ PROJECT_ID.stdout }} && /home/pi/google-cloud-sdk/bin/gcloud app deploy {{ deploy_path }} --project={{ PROJECT_ID.stdout }}"
+    #   environment:
+    #     GOOGLE_APPLICATION_CREDENTIALS: /home/pi/web_view/rpi-server/key.json
