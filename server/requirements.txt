@@ -1,3 +1,0 @@
-webapp2=latest
-six==1.11.0
-

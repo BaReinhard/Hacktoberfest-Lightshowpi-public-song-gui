@@ -59,7 +59,7 @@ class App extends Component {
     // });
     // }
 
-    this.setState({ psgState: newState });
+    this.setState({ psgState: JSON.parse(newState) });
   };
   async componentDidMount() {
     let getState = this.getState;
