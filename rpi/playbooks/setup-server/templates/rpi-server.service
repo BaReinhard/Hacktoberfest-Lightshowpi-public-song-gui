@@ -1,0 +1,29 @@
+[Unit]
+Description=RPI-Server State Updater
+ConditionPathExists=/usr/local/rpi-server/rpi-server
+After=network.target
+ 
+[Service]
+Type=simple
+User=pi
+Group=staff
+LimitNOFILE=1024
+
+Restart=on-failure
+RestartSec=10
+startLimitIntervalSec=60
+
+WorkingDirectory=/usr/local/rpi-server
+ExecStart=/usr/local/rpi-server/rpi-server
+
+# make sure log directory exists and owned by syslog
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /var/log/rpi-server
+ExecStartPre=/bin/chown syslog:adm /var/log/rpi-server
+ExecStartPre=/bin/chmod 755 /var/log/rpi-server
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=rpi-server
+ 
+[Install]
+WantedBy=multi-user.target
