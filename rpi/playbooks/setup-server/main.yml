@@ -162,7 +162,7 @@
     - name: Templating Start Show File
       template:
         src: templates/start_show.py
-        dest: /usr/local/bin/start_show.sh
+        dest: /usr/local/bin/start_show.py
         owner: pi
         group: staff
         mode: a+x
@@ -210,6 +210,23 @@
         group: staff
         mode: 0755
       become: yes  
+    - name: Templating Shutdown File
+      template:
+        src: templates/shutdown.sh
+        dest: /usr/local/bin/shutdown.sh
+        owner: pi
+        group: staff
+        mode: a+x
+      become: yes
+    - name: Creates weekly backup cronjob
+      cron: 
+        name: "Setting"
+        minute: */1
+        hour: "*"
+        day: "*"
+        month: "*"
+        weekday: "*"
+        job: /usr/local/bin/shutdown.sh
     # Possibly reuse for localhost playbook on deployment    
     # - name: Deploy Appengine Contents
     #   shell: "/home/pi/google-cloud-sdk/bin/gcloud config set project {{ PROJECT_ID.stdout }} && /home/pi/google-cloud-sdk/bin/gcloud auth activate-service-account {{ CLIENT_EMAIL.stdout }} --key-file={{ GOOGLE_APPLICATION_CREDENTIALS }} --project={{ PROJECT_ID.stdout }} && /home/pi/google-cloud-sdk/bin/gcloud app deploy {{ deploy_path }} --project={{ PROJECT_ID.stdout }}"
