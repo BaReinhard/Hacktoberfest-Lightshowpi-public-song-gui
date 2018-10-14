@@ -123,34 +123,34 @@
         mode: 0755
       become: yes
     # Possibly reuse for localhost playbook on deployment
-    # - name: Templating GCP Credentials
-    #   template:
-    #     src: templates/key.json.j2
-    #     dest: /home/pi/web_view/server/key.json
-    #     owner: pi
-    #     group: staff
-    #     mode: 0755
-    #   become: yes
+    - name: Templating GCP Credentials
+      template:
+        src: templates/key.json.j2
+        dest: /home/pi/web_view/server/key.json
+        owner: pi
+        group: staff
+        mode: 0755
+      become: yes
     # Possibly reuse for localhost playbook on deployment
-    # - name: Set Project ID
-    #   shell: /usr/local/go/bin/go run /home/pi/web_view/bin/project/getProject.go
-    #   register: PROJECT_ID
-    #   environment:
-    #     GOOGLE_APPLICATION_CREDENTIALS: "{{ GOOGLE_APPLICATION_CREDENTIALS }}"
-    # - name: Set Email
-    #   shell: /usr/local/go/bin/go run /home/pi/web_view/bin/email/getEmail.go
-    #   register: CLIENT_EMAIL
-    #   environment:
-    #     GOOGLE_APPLICATION_CREDENTIALS: "{{ GOOGLE_APPLICATION_CREDENTIALS }}"
+    - name: Set Project ID
+      shell: /usr/local/go/bin/go run /home/pi/web_view/bin/project/getProject.go
+      register: PROJECT_ID
+      environment:
+        GOOGLE_APPLICATION_CREDENTIALS: "{{ GOOGLE_APPLICATION_CREDENTIALS }}"
+    - name: Set Email
+      shell: /usr/local/go/bin/go run /home/pi/web_view/bin/email/getEmail.go
+      register: CLIENT_EMAIL
+      environment:
+        GOOGLE_APPLICATION_CREDENTIALS: "{{ GOOGLE_APPLICATION_CREDENTIALS }}"
     # Possibly reuse for localhost playbook on deployment
-    # - name: Templating app.yaml
-    #   template:
-    #     src: templates/app.yaml.j2
-    #     dest: /home/pi/web_view/server/app.yaml
-    #     owner: pi
-    #     group: staff
-    #     mode: 0755
-    #   become: yes
+    - name: Templating app.yaml
+      template:
+        src: templates/app.yaml.j2
+        dest: /home/pi/web_view/server/app.yaml
+        owner: pi
+        group: staff
+        mode: 0755
+      become: yes
     - name: Templating Set Song File
       template:
         src: templates/set-song.sh.j2
@@ -221,14 +221,14 @@
     - name: Creates weekly backup cronjob
       cron: 
         name: "Setting"
-        minute: */1
+        minute: "*/1"
         hour: "*"
         day: "*"
         month: "*"
         weekday: "*"
         job: /usr/local/bin/shutdown.sh
     # Possibly reuse for localhost playbook on deployment    
-    # - name: Deploy Appengine Contents
-    #   shell: "/home/pi/google-cloud-sdk/bin/gcloud config set project {{ PROJECT_ID.stdout }} && /home/pi/google-cloud-sdk/bin/gcloud auth activate-service-account {{ CLIENT_EMAIL.stdout }} --key-file={{ GOOGLE_APPLICATION_CREDENTIALS }} --project={{ PROJECT_ID.stdout }} && /home/pi/google-cloud-sdk/bin/gcloud app deploy {{ deploy_path }} --project={{ PROJECT_ID.stdout }}"
-    #   environment:
-    #     GOOGLE_APPLICATION_CREDENTIALS: "{{ GOOGLE_APPLICATION_CREDENTIALS }}"
+    - name: Deploy Appengine Contents
+      shell: "/home/pi/google-cloud-sdk/bin/gcloud config set project {{ PROJECT_ID.stdout }} && /home/pi/google-cloud-sdk/bin/gcloud auth activate-service-account {{ CLIENT_EMAIL.stdout }} --key-file={{ GOOGLE_APPLICATION_CREDENTIALS }} --project={{ PROJECT_ID.stdout }} && /home/pi/google-cloud-sdk/bin/gcloud app deploy {{ deploy_path }} --project={{ PROJECT_ID.stdout }}"
+      environment:
+        GOOGLE_APPLICATION_CREDENTIALS: "{{ GOOGLE_APPLICATION_CREDENTIALS }}"
