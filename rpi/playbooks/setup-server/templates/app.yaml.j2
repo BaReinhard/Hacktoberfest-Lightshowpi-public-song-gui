@@ -1,12 +1,20 @@
-runtime: go
-api_version: go1
+runtime: python27
+api_version: 1
+threadsafe: true
 
 service: public-song-gui
+
 env_variables:
   PROJECT_ID: {{ PROJECT_ID.stdout }}
-  GOOGLE_APPLICATION_CREDENTIALS: './key.json'
+  GOOGLE_APPLICATION_CREDENTIALS: "./key.json"
 
 handlers:
   # All URLs are handled by the Go application script
-  - url: /.*
-    script: _go_app
+  - url: /api/.*
+    script: main.app
+  - url: /
+    static_files: static/index.html
+    upload: static/index.html
+  - url: /(.*)
+    static_files: static/\1
+    upload: static/(.*)

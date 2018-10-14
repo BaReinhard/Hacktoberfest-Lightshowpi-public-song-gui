@@ -8,7 +8,7 @@ Type=simple
 User=pi
 Group=staff
 LimitNOFILE=1024
-Environment="GOOGLE_APPLICATION_CREDENTIALS=/home/pi/web_view/rpi-server/key.json" "GOPATH=/home/pi/go"
+Environment="GOOGLE_APPLICATION_CREDENTIALS=/home/pi/web_view/rpi-server/key.json" "SYNCHRONIZED_LIGHTS_HOME=/home/pi/lightshowpi" "GOPATH=/home/pi/go"
 Restart=on-failure
 RestartSec=10
 
