@@ -11,6 +11,7 @@ LimitNOFILE=1024
 Environment="GOOGLE_APPLICATION_CREDENTIALS=/home/pi/web_view/rpi-server/key.json" "SYNCHRONIZED_LIGHTS_HOME=/home/pi/lightshowpi" "GOPATH=/home/pi/go"
 Restart=on-failure
 RestartSec=10
+ProtectHome=read-only
 
 WorkingDirectory=/usr/local/rpi-server
 ExecStart=/usr/local/rpi-server/rpi-server 
