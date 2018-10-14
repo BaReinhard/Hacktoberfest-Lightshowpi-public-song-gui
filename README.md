@@ -31,7 +31,7 @@ Setup will be available as an Ansible Playbook to configure you're raspberry Pi 
 
 Feature Roadmap contains all features that will be targeted, not necessarily in the correct order.
 
-- **_Frontend_** - Display Current Song Playing, Songs on Playlist
+- **_Frontend (COMPLETED)_** - Display Current Song Playing, Songs on Playlist
 - **_Frontend_** - Polls for users to cast votes for; next song, skip current song, replay. Possibly more to come
-- **_Local Server_** - Check Lightshow Pi for current song, next song, playlist songs, if in playlist mode. Send state to Datastore for frontend to render on
-- **_Local Server_** - Get integrated with the Lightshow Pi Service itself
+- **_Local Server (COMPLETED)_** - Check Lightshow Pi for current song, next song, playlist songs, if in playlist mode. Send state to Datastore for frontend to render on
+- **_Local Server (COMPLETED)_** - Get integrated with the Lightshow Pi Service itself
